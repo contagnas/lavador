@@ -1,7 +1,7 @@
 package lavador.mixer
 
 import io.circe.generic.auto._
-import lavador.mockcoin.AccountId
+import lavador.jobcoin.AccountId
 import tapir._
 import tapir.json.circe._
 

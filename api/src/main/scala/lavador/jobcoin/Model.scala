@@ -1,4 +1,4 @@
-package lavador.mockcoin
+package lavador.jobcoin
 
 
 // Each Jobcoin has an "address" that is just an arbitrary string

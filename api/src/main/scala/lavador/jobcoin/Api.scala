@@ -1,4 +1,4 @@
-package lavador.mockcoin
+package lavador.jobcoin
 
 import tapir._
 import tapir.json.circe._
