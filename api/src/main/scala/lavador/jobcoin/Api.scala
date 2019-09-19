@@ -14,7 +14,7 @@ object Api {
     .description("Send jobcoins between two addresses")
     .in(query[String]("fromAccount").description("The account to transfer coins from").mapTo(Account))
     .in(query[String]("toAccount").description("The account to transfer coins to").mapTo(Account))
-    .in(query[Int]("amount").description("The number of coins to send"))
+    .in(query[Int]("amount").validate(Validator.min(1)).description("The number of coins to send"))
     .errorOut(stringBody)
     .out(jsonBody[Transaction])
 
