@@ -2,19 +2,22 @@ package lavador.mixer
 
 import cats.effect.ConcurrentEffect
 import io.circe.generic.auto._
-import lavador.jobcoin.{Account, AccountBalance, Transaction, Api => JobcoinApi}
+import lavador.jobcoin.{Address, AddressDetails, SuccessfulTransaction, Transaction, UnsuccessfulTransaction, Api => JobcoinApi}
 import org.http4s.Uri
 import org.http4s.circe._
+
 import tapir.client.http4s._
 
 import scala.concurrent.ExecutionContext
 
 class JobcoinClient[F[_]: ConcurrentEffect](uri: Uri)(implicit ec: ExecutionContext) {
-  implicit val transactionDecoder = jsonOf[F, Transaction]
-  def transferCoins(fromAccount: Account, toAccount: Account, amount: Int): F[Either[String, Transaction]] =
-    JobcoinApi.transferCoins.toHttp4sRequest(uri).apply((fromAccount, toAccount, amount))
+  private implicit val unsuccessfulTransactionDecoder = jsonOf[F, UnsuccessfulTransaction]
+  private implicit val successfulTransactionDecoder = jsonOf[F, SuccessfulTransaction]
+  def transferCoins(fromAddress: Address, toAddress: Address, amount: BigDecimal): F[Either[UnsuccessfulTransaction, SuccessfulTransaction]] = {
+    JobcoinApi.sendCoins.toHttp4sRequest(uri).apply((fromAddress, toAddress, amount))
+  }
 
-  implicit val accountBalanceDecoder = jsonOf[F, AccountBalance]
-  def lookupAccount(account: Account): F[Either[String, AccountBalance]] =
-    JobcoinApi.lookupAccount.toHttp4sRequest(uri).apply(account)
+  private implicit val addressDetailsDecoder = jsonOf[F, AddressDetails]
+  def lookupAddress(address: Address): F[Either[String, AddressDetails]] =
+    JobcoinApi.lookupAddress.toHttp4sRequest(uri).apply(address)
 }

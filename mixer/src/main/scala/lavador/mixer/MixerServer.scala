@@ -3,7 +3,7 @@ package lavador.mixer
 import cats.Parallel
 import cats.effect.{ConcurrentEffect, ContextShift, Timer}
 import fs2.Stream
-import lavador.jobcoin.Account
+import lavador.jobcoin.Address
 import org.http4s.implicits._
 import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder
@@ -18,7 +18,7 @@ object MixerServer {
     .replace("!!int '0.0", "0.0")
     .replace("minSize", "minItems")
 
-  def stream[F[_]: ConcurrentEffect: Parallel](mixerAccount: Account, jobcoinClient: JobcoinClient[F])(
+  def stream[F[_]: ConcurrentEffect: Parallel](mixerAccount: Address, jobcoinClient: JobcoinClient[F])(
     implicit T: Timer[F], C: ContextShift[F]
   ): Stream[F, Nothing] = {
     val httpApp = Router(

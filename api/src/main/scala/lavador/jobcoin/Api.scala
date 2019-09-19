@@ -1,49 +1,43 @@
 package lavador.jobcoin
 
+import io.circe.generic.auto._
 import tapir._
 import tapir.json.circe._
-import io.circe.generic.auto._
 
 object Api {
-  /**
-   * Anyone can send Jobcoins between any two addresses
-   */
-  val transferCoins: Endpoint[(Account, Account, Int), String, Transaction, Nothing] = endpoint
-    .post
-    .in("transferCoins")
-    .description("Send jobcoins between two addresses")
-    .in(query[String]("fromAccount").description("The account to transfer coins from").mapTo(Account))
-    .in(query[String]("toAccount").description("The account to transfer coins to").mapTo(Account))
-    .in(query[Int]("amount").validate(Validator.min(1)).description("The number of coins to send"))
-    .errorOut(stringBody)
-    .out(jsonBody[Transaction])
+  val lookupAddress: Endpoint[Address, String, AddressDetails, Nothing] = endpoint
+      .get
+      .in("addresses")
+      .description("Get the balance and list of transactions for an address")
+      .in(path[String].example("BobsAddress").map(Address.apply)(_.value))
+      .errorOut(stringBody)
+      .out(jsonBody[AddressDetails])
 
-  /**
-   * Anyone can create units of Jobcoins out of thin air
-   */
-  val createCoins: Endpoint[(Account, Int), String, Transaction, Nothing] = endpoint
-    .post
-    .in("createCoins")
-    .description("Add jobcoins to an account")
-    .in(query[String]("toAccount").description("The account to add coins to").mapTo(Account))
-    .in(query[Int]("amount").description("The number of coins to add"))
-    .errorOut(stringBody)
-    .out(jsonBody[Transaction])
-
-  val listTransactions: Endpoint[Unit, String, List[Transaction], Nothing] = endpoint
+  val transactions: Endpoint[Unit, String, List[Transaction], Nothing] = endpoint
     .get
-    .in("listTransactions")
-    .description("Get a list of all transactions on the blockchain")
+    .in("transactions")
+    .description("Get a list of all Jobcoin transactions")
     .errorOut(stringBody)
     .out(jsonBody[List[Transaction]])
 
-  val lookupAccount: Endpoint[Account, String, AccountBalance, Nothing] = endpoint
-    .get
-    .in("lookupAccount")
-    .description("Get details on a specific jobcoin account")
-    .in(query[String]("accountId").description("The account to look up").mapTo(Account))
-    .errorOut(stringBody)
-    .out(jsonBody[AccountBalance])
+  val sendCoins: Endpoint[(Address, Address, BigDecimal), UnsuccessfulTransaction, SuccessfulTransaction, Nothing] = endpoint
+    .post
+    .in("transactions")
+    .description("Send Jobcoins from one address to another.")
+    .in(query[String]("fromAddress")
+      .description("The address sending the Jobcoins")
+      .example("BobsAddress")
+      .map(Address.apply)(_.value))
+    .in(query[String]("toAddress")
+      .description("The address receiving the Jobcoins")
+      .example("AlicesAddress")
+      .map(Address.apply)(_.value))
+    .in(query[String]("amount")
+      .description("The number of Jobcoins to send, as a string.")
+      .example("30.1")
+      .map(BigDecimal.apply)(_.toString))
+    .errorOut(jsonBody[UnsuccessfulTransaction])
+    .out(jsonBody[SuccessfulTransaction])
 
-  val endpoints = List(transferCoins, createCoins, listTransactions, lookupAccount)
+  val endpoints = List(lookupAddress, transactions, sendCoins)
 }

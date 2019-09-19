@@ -5,19 +5,17 @@ import cats.effect.IO._
 import org.http4s.implicits._
 import cats.implicits._
 
-import lavador.jobcoin.Account
+import lavador.jobcoin.Address
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object Main extends IOApp {
-  implicit val contextShift2 = IO.contextShift(global)
-
   def run(args: List[String]) = {
-    val mixerAccount = Account("m1x3r")
-    val jobcoinClient = new JobcoinClient[IO](uri"http://localhost:8080")
+    val mixerAddress = Address("mixer")
+    val jobcoinClient = new JobcoinClient[IO](uri"https://jobcoin.gemini.com/wackiness/api")
 
     for {
-      server <- MixerServer.stream[IO](mixerAccount, jobcoinClient)
+      server <- MixerServer.stream[IO](mixerAddress, jobcoinClient)
     } yield server
   }.compile.drain.as(ExitCode.Success)
 }
