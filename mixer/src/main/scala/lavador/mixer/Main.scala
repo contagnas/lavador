@@ -15,7 +15,7 @@ object Main extends IOApp {
     val jobcoinClient = new JobcoinClient[IO](uri"https://jobcoin.gemini.com/wackiness/api")
 
     for {
-      server <- MixerServer.stream[IO](mixerAddress, jobcoinClient)
+      server <- MixerServer.stream(mixerAddress, jobcoinClient)
     } yield server
   }.compile.drain.as(ExitCode.Success)
 }

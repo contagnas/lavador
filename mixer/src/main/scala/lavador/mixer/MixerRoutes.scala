@@ -12,22 +12,22 @@ import tapir.server.http4s._
 
 import scala.concurrent.duration.{FiniteDuration, _}
 
-class MixerRoutes[F[_]: Sync: Effect: Parallel](
+class MixerRoutes(
   mixerAddress: Address,
-  jobcoinClient: JobcoinClient[F]
+  jobcoinClient: JobcoinClient[IO]
 )(
-  implicit options: Http4sServerOptions[F],
-  cs: ContextShift[F],
-  timer: Timer[F]
+  implicit options: Http4sServerOptions[IO],
+  cs: ContextShift[IO],
+  timer: Timer[IO],
 ) {
-  private def eff[A, E](a: A): EitherT[F, E, A] = EitherT.right(implicitly[LiftIO[F]].liftIO(IO(a)))
+  private def eff[A, E](a: => A): EitherT[IO, E, A] = EitherT.right(IO(a))
 
-  def getDepositAddress(u: Unit): F[Either[String, Address]] =
+  def getDepositAddress(u: Unit): IO[Either[String, Address]] =
     eff(Address(UUID.randomUUID().toString)).value
 
   private def makeMixerDeposits(
     deposits: List[MixerDeposit]
-  ): F[Either[String, List[Unit]]] = {
+  ): IO[Either[String, List[Unit]]] = {
     deposits.map {
       case MixerDeposit(toAddress, delay, amount) =>
         for {
@@ -71,12 +71,16 @@ class MixerRoutes[F[_]: Sync: Effect: Parallel](
     }
   }
 
+  private def startDeposits(mixerDeposits: List[MixerDeposit]): IO[Unit] = {
+    IO.shift *> makeMixerDeposits(mixerDeposits).start
+  }.map(_ => ())
+
   def runMixer(
     toAddresses: List[Address],
     fromAddress: Address,
     maxMixerFee: MaxMixerFee,
     maxTimeToExecute: MaxTimeToExecute
-  ): F[Either[String, MixerReceipt]] = {
+  ): IO[Either[String, MixerReceipt]] = {
     for {
       addressDetails <- EitherT(jobcoinClient.lookupAddress(fromAddress))
       fee <- eff(math.random * maxMixerFee.value / 100)
@@ -86,7 +90,7 @@ class MixerRoutes[F[_]: Sync: Effect: Parallel](
       now <- EitherT.right[String](timer.clock.realTime(MILLISECONDS))
       nowZdt = ZonedDateTime.ofInstant(Instant.ofEpochMilli(now), ZoneId.systemDefault())
       mixerDeposits = allocateDeposits(toAddresses, maxTimeToExecute, coinsToMix)
-      _ <- EitherT(makeMixerDeposits(mixerDeposits))
+      _ <- EitherT.right[String](startDeposits(mixerDeposits))
       receipt = mixerDeposits.toReceipt(feeTaken, nowZdt)
     } yield receipt
   }.value
