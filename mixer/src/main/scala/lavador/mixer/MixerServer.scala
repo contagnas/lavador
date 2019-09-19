@@ -14,6 +14,7 @@ import tapir.swagger.http4s.SwaggerHttp4s
 
 object MixerServer {
   private val docs = Api.endpoints.toOpenAPI("Mixer", "0.0.1").toYaml
+    // Bug in Tapir OpenAPI generation...
     .replace("!!int '0.0", "0.0")
     .replace("minSize", "minItems")
 
