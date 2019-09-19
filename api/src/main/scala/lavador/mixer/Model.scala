@@ -11,6 +11,5 @@ case class MaxTimeToExecute(value: FiniteDuration) extends AnyVal
 
 case class MixerReceipt(
   fee: BigDecimal,
-  scheduledDepositTime: ZonedDateTime,
   transactions: List[Transaction]
 )
