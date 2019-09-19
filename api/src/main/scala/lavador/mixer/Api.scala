@@ -15,10 +15,10 @@ object Api {
     .errorOut(stringBody)
     .out(jsonBody[Account])
 
-  val runMixer: Endpoint[(List[Account], MaxMixerFee, MaxTimeToExecute), String, String, Nothing] = endpoint
+  val runMixer: Endpoint[(List[Account], Account, MaxMixerFee, MaxTimeToExecute), String, MixerReceipt, Nothing] = endpoint
     .post
     .in("runMixer")
-    .in(jsonBody[List[String]].description("Account IDs to transfer coins to")
+    .in(query[List[String]]("toAccounts").description("Account IDs to transfer coins to")
       .map(ss => ss.map(Account))(_.map(_.id)))
     .in(query[Double]("maxMixerFee")
       .description("The maximum mixer fee to charge. A random charge will be applied up to this value. Use higher fees for more anonymity.")
@@ -27,7 +27,7 @@ object Api {
       .description("The maximum time (in seconds) to wait before making deposits. Use longer durations for more anonymity.")
       .map[MaxTimeToExecute](s => MaxTimeToExecute(s.seconds))(_.value.toSeconds.toInt))
     .errorOut(stringBody)
-    .out(plainBody[String])
+    .out(jsonBody[MixerReceipt])
 
   val endpoints = List(getDepositAccount, runMixer)
 }

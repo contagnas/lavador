@@ -1,39 +1,37 @@
 package lavador.mixer
 
+import cats.Parallel
 import cats.effect.{ConcurrentEffect, ContextShift, Timer}
-import cats.implicits._
 import fs2.Stream
-import org.http4s.client.blaze.BlazeClientBuilder
+import lavador.jobcoin.Account
 import org.http4s.implicits._
+import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.Logger
-import fs2.Stream
-import scala.concurrent.ExecutionContext.global
+import tapir.docs.openapi._
+import tapir.openapi.circe.yaml._
+import tapir.swagger.http4s.SwaggerHttp4s
+
 
 object MixerServer {
+  private val docs = Api.endpoints.toOpenAPI("Mixer", "0.0.1").toYaml
+    .replace("!!int '0.0", "0.0")
+    .replace("minSize", "minItems")
 
-  def stream[F[_]: ConcurrentEffect](implicit T: Timer[F], C: ContextShift[F]): Stream[F, Nothing] = {
-    for {
-      client <- BlazeClientBuilder[F](global).stream
-      helloWorldAlg = HelloWorld.impl[F]
-      jokeAlg = Jokes.impl[F](client)
+  def stream[F[_]: ConcurrentEffect: Parallel](mixerAccount: Account, jobcoinClient: JobcoinClient[F])(
+    implicit T: Timer[F], C: ContextShift[F]
+  ): Stream[F, Nothing] = {
+    val httpApp = Router(
+      "/" -> new MixerRoutes[F](mixerAccount, jobcoinClient).routes,
+      "/docs" -> new SwaggerHttp4s(docs).routes,
+    ).orNotFound
 
-      // Combine Service Routes into an HttpApp.
-      // Can also be done via a Router if you
-      // want to extract a segments not checked
-      // in the underlying routes.
-      httpApp = (
-        MixerRoutes.helloWorldRoutes[F](helloWorldAlg) <+>
-        MixerRoutes.jokeRoutes[F](jokeAlg)
-      ).orNotFound
+    val finalHttpApp = Logger.httpApp(true, true)(httpApp)
 
-      // With Middlewares in place
-      finalHttpApp = Logger.httpApp(true, true)(httpApp)
-
-      exitCode <- BlazeServerBuilder[F]
-        .bindHttp(8080, "0.0.0.0")
-        .withHttpApp(finalHttpApp)
-        .serve
-    } yield exitCode
-  }.drain
+    BlazeServerBuilder[F]
+      .bindHttp(8081, "0.0.0.0")
+      .withHttpApp(finalHttpApp)
+      .serve
+      .drain
+  }
 }
