@@ -18,7 +18,7 @@ object Api {
   val runMixer: Endpoint[(List[Address], Address, MaxMixerFee, MaxTimeToExecute), String, MixerReceipt, Nothing] = endpoint
     .post
     .in("runMixer")
-    .in(query[List[String]]("toAddresss")
+    .in(query[List[String]]("toAddresses")
       .description("Address IDs to transfer coins to")
       .validate(Validator.minSize(1))
       .map(ss => ss.map(Address.apply))(_.map(_.value)))
