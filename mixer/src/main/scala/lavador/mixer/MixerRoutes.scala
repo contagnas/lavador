@@ -3,7 +3,6 @@ package lavador.mixer
 import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.UUID
 
-import cats.Parallel
 import cats.data.EitherT
 import cats.effect._
 import cats.implicits._
