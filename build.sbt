@@ -18,7 +18,6 @@ lazy val rootProject = (project in file("."))
   .aggregate(
     api,
     mixer,
-    jobcoin,
   )
 
 lazy val tapirHttp4sClient = ProjectRef(uri("https://github.com/contagnas/tapir.git"), "http4sClient")
@@ -56,23 +55,6 @@ lazy val mixer = project
     ),
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.0"),
   ).dependsOn(api, tapirHttp4sClient)
-
-lazy val jobcoin = project
-  .settings(commonSettings)
-  .settings(
-    name := "jobcoin",
-    libraryDependencies ++= Seq(
-      "org.http4s" %% "http4s-blaze-server" % Http4sVersion,
-      "org.http4s" %% "http4s-blaze-client" % Http4sVersion,
-      "org.http4s" %% "http4s-circe" % Http4sVersion,
-      "org.http4s" %% "http4s-dsl" % Http4sVersion,
-      "io.circe" %% "circe-generic" % CirceVersion,
-      "ch.qos.logback" % "logback-classic" % LogbackVersion,
-      "com.softwaremill.tapir" %% "tapir-http4s-server" % tapirVersion,
-      "com.softwaremill.tapir" %% "tapir-swagger-ui-http4s" % tapirVersion,
-      scalaTest % "test",
-    )
-  ).dependsOn(api)
 
 scalacOptions ++= Seq(
   "-deprecation",
